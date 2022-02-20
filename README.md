@@ -9,10 +9,10 @@ Note that the `latest` tag **must already exist**; this action will not create t
 Local Docker authentication is used; any existing Docker auth action that you’re already using like [docker/login-action][docker-login] or [AWS ECR login][ecr-login] should work for this action, too.
 
 ```yaml
-- uses: silverlyra/latest-image
+- uses: silverlyra/latest-image-action
   with:
     repository: your/project
-    candidate-tag: ${{ steps.current_version.outputs.version }}
+    candidate-tag: ${{ github.ref_name }}
 ```
 
 [semver]: https://semver.org/
@@ -30,7 +30,7 @@ The following [inputs][action-with] are available on the action:
 The Docker image repository to update. If you image is published to multiple repositories, you can list each one on its own line:
 
 ```yaml
-- uses: silverlyra/latest-image
+- uses: silverlyra/latest-image-action
   with:
     repository: |
       some/project
@@ -41,7 +41,7 @@ The Docker image repository to update. If you image is published to multiple rep
 
 The Docker image tag that should (maybe) be promoted to `latest`.
 
-This tag must be available in your workflow context, either as a Git tag name, or an output from a prior step.
+This tag must be available in your workflow context, either as a Git tag name (`${{ github.ref_name }}`), or an output from a prior step.
 
 ```yaml
 with:
