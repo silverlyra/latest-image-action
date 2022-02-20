@@ -1,19 +1,20 @@
-import * as core from '@actions/core'
-import {wait} from './wait'
+import {ExitCode, setFailed} from '@actions/core'
 
-async function run(): Promise<void> {
-  try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
+import {Request} from './request'
+import {run} from './promote'
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    core.setOutput('time', new Date().toTimeString())
-  } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message)
-  }
+async function main(): Promise<void> {
+  const request = Request.fromAction()
+  await run(request)
 }
 
-run()
+// eslint-disable-next-line github/no-then
+main().then(
+  () => {
+    process.exit(ExitCode.Success)
+  },
+  error => {
+    setFailed(error)
+    process.exit(ExitCode.Failure)
+  },
+)

@@ -1,11 +1,41 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Update latest Docker tag'
+description: >
+  Update the latest tag of a Docker repo to point to a newly-built image, but
+  only if the new image is a (semver) newer version than latest.
+branding:
+  icon: arrow-up-circle
+  color: blue
 inputs:
-  milliseconds: # change this
+  repository:
+    description: 'Docker image repository to check and update. To update multiple repos, pass a multiline string.'
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+  candidate-tag:
+    description: 'The newly-pushed image tag that possibly should be promoted to latest'
+    required: true
+  latest-tag:
+    description: 'The image tag to check and possibly update'
+    required: true
+    default: 'latest'
+  version-source:
+    description: "Read an image's version from a label (label:...) or environment variable (env:...)"
+    required: true
+    default: 'label:org.opencontainers.image.version'
+  promote-prerelease:
+    description: 'Allow prerelease versions to replace non-prerelease latest'
+    default: 'false'
+  coerce-semver:
+    description: 'Coerce detected version values to semver'
+    default: 'false'
+  manifest-platform:
+    description: 'Read the current version from the container config of this platform in a multi-arch index / manifest list'
+    default: 'linux/amd64'
+outputs:
+  updated:
+    description: Whether or not the image was updated (true or false)
+  latest-version:
+    description: The detected version of the latest tag
+  candidate-version:
+    description: The detected version of the candidate tag
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'

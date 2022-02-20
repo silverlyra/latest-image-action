@@ -1,105 +1,101 @@
-<p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
-</p>
+# Latest image action
 
-# Create a JavaScript Action using TypeScript
+If you work on a project that publishes Docker images, you can add this action to your workflow to keep the Docker `latest` tag up to date.
 
-Use this template to bootstrap the creation of a TypeScript action.:rocket:
+Set either a label or `ENV` var containing your package’s version on your Docker images, and this action will update the `latest` tag _only if_ the new version is actually newer (according to [semver][semver]). This means that (e.g.) if you publish a patch release `1.2.4`, but `latest` is `1.3.0`, then `latest` won’t be “updated” to `1.2.4`.
 
-This template includes compilation support, tests, a validation workflow, publishing, and versioning guidance.  
+Note that the `latest` tag **must already exist**; this action will not create the tag initially.
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
-
-## Create an action from this template
-
-Click the `Use this Template` and provide the new repo details for your action
-
-## Code in Main
-
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
-
-Install the dependencies  
-```bash
-$ npm install
-```
-
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
-
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
-
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-
-...
-```
-
-## Change action.yml
-
-The action.yml defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
-## Publish to a distribution branch
-
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
-
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
+Local Docker authentication is used; any existing Docker auth action that you’re already using like [docker/login-action][docker-login] or [AWS ECR login][ecr-login] should work for this action, too.
 
 ```yaml
-uses: ./
-with:
-  milliseconds: 1000
+- uses: silverlyra/latest-image
+  with:
+    repository: your/project
+    candidate-tag: ${{ steps.current_version.outputs.version }}
 ```
 
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
+[semver]: https://semver.org/
+[docker-login]: https://github.com/marketplace/actions/docker-login
+[ecr-login]: https://github.com/aws-actions/amazon-ecr-login
 
-## Usage:
+## Inputs
 
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
+The following [inputs][action-with] are available on the action:
+
+[action-with]: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepswith
+
+#### `repository` (required) 👈
+
+The Docker image repository to update. If you image is published to multiple repositories, you can list each one on its own line:
+
+```yaml
+- uses: silverlyra/latest-image
+  with:
+    repository: |
+      some/project
+      ghcr.io/some/project/project
+```
+
+#### `candidate-tag` (required) 👈
+
+The Docker image tag that should (maybe) be promoted to `latest`.
+
+This tag must be available in your workflow context, either as a Git tag name, or an output from a prior step.
+
+```yaml
+with:
+  candidate-tag: ${{ steps.current_version.outputs.version }}
+```
+
+#### `latest-tag`
+
+> default: `latest`
+
+The Docker image tag to (conditionally) update.
+
+#### `version-source`
+
+> default: `label:org.opencontainers.image.version`
+
+Where the software version can be found in your Docker image metadata.
+
+Use `label:...` to read an image label, or `env:...` to read a preset `ENV` var.
+
+The default uses the version label from [OpenContainers][oc-attrs].
+
+[oc-attrs]: https://github.com/opencontainers/image-spec/blob/main/annotations.md
+
+#### `promote-prerelease`
+
+> default: `false`
+
+Allow a pre-release (e.g., alpha, beta, release-candidate) version to replace a non-pre-release latest.
+
+#### `coerce-semver`
+
+> default: `false`
+
+Use a coercing [semver][semver] parser.
+
+#### `manifest-platform`
+
+> default: `linux/amd64`
+
+When updating a tag that points to a multi-arch manifest list (or OCI index), read the image configuration from the manifest for this platform.
+
+## Outputs
+
+The action will set these outputs:
+
+#### `updated`
+
+Set to `true` if the latest tag was updated; `false` if not.
+
+#### `latest-version`
+
+Set to the version detected from the latest tag.
+
+#### `candidate-version`
+
+Set to the version detected from the candidate tag.
