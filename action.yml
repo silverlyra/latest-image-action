@@ -1,7 +1,6 @@
 name: 'Update latest Docker tag'
 description: >
-  Update the latest tag of a Docker repo to point to a newly-built image, but
-  only if the new image is a (semver) newer version than latest.
+  Update the latest tag of a Docker repo, but only if the new image is a (semver) newer version than what's there already.
 branding:
   icon: arrow-up-circle
   color: blue
